@@ -1,6 +1,7 @@
 <?php namespace Chumper\Datatable\Engines;
 
 use Exception;
+use Assetic\Extension\Twig\AsseticFilterFunction;
 use Chumper\Datatable\Columns\DateColumn;
 use Chumper\Datatable\Columns\FunctionColumn;
 use Chumper\Datatable\Columns\TextColumn;
@@ -52,9 +53,9 @@ abstract class BaseEngine {
     /**
      * @var array
      * support for DB::raw fields on where
-     * sburkett - added for column-based exact matching
-     */
-    protected $columnSearchExact = array();
+     * sburkett - added for column-based exact matching                                                                                                            
+     */                                                                                                                                                            
+    protected $columnSearchExact = array(); 
 
     /**
      * @var
@@ -125,12 +126,6 @@ abstract class BaseEngine {
      * @var bool If you need to display all records.
      */
     protected $enableDisplayAll = false;
-
-    /**
-     * @var mixed Additional data which passed from server to client.
-     */
-    protected $additionalData = null;
-
     function __construct()
     {
         $this->columns = new Collection();
@@ -226,7 +221,7 @@ abstract class BaseEngine {
             else
             {
                 $this->columns->put($property, new FunctionColumn($property, function($model) use($property){
-                    try{return is_array($model)?$model[$property]:$model->$property;}catch(Exception $e){return null;}
+                    try{return is_array($model)?$model[$property]:$model->$property;}catch(Exception $e){return null;}    
                 }));
             }
             $this->showColumns[] = $property;
@@ -235,28 +230,19 @@ abstract class BaseEngine {
     }
 
     /**
-     * Used to handle all the inputs directly from an engine, instead of from Datatables.
-     * @see QueryEngine
-     */
-    protected function prepareEngine()
-    {
-        $this->handleInputs();
-        $this->prepareSearchColumns();
-    }
-
-    /**
      * @return \Illuminate\Http\JsonResponse
      */
     public function make()
     {
-        $this->prepareEngine();
+        //TODO Handle all inputs
+        $this->handleInputs();
+        $this->prepareSearchColumns();
 
         $output = array(
             "aaData" => $this->internalMake($this->columns, $this->searchColumns)->toArray(),
             "sEcho" => intval($this->sEcho),
             "iTotalRecords" => $this->totalCount(),
             "iTotalDisplayRecords" => $this->count(),
-            "aaAdditional" => $this->additionalData,
         );
         return Response::json($output);
     }
@@ -325,13 +311,13 @@ abstract class BaseEngine {
         $this->aliasMapping = $value;
         return $this;
     }
-
+    
     public function setExactWordSearch($value = true)
     {
         $this->exactWordSearch = $value;
         return $this;
     }
-
+    
     public function setEnableDisplayAll($value = true)
     {
         $this->enableDisplayAll = $value;
@@ -347,12 +333,6 @@ abstract class BaseEngine {
         $this->columnSearchExact[ $columnIndex ] = true;
 
       return $this;
-    }
-
-    public function setAdditionalData($data)
-    {
-        $this->additionalData = $data;
-        return $this;
     }
 
     public function getRowClass()
@@ -374,7 +354,7 @@ abstract class BaseEngine {
     {
         return $this->aliasMapping;
     }
-
+    
     public function getEnableDisplayAll()
     {
         return $this->enableDisplayAll;
@@ -435,16 +415,14 @@ abstract class BaseEngine {
     protected function handleiSortCol_0($value)
     {
         if(Input::get('sSortDir_0') == 'desc')
-            $direction[$value] = BaseEngine::ORDER_DESC;
+            $direction = BaseEngine::ORDER_DESC;
         else
-            $direction[$value] = BaseEngine::ORDER_ASC;
+            $direction = BaseEngine::ORDER_ASC;
 
-        $columns = array();
         //check if order is allowed
         if(empty($this->orderColumns))
         {
-            $columns[] = array(0 => $value, 1 => '`'.$this->getNameByIndex($value).'`');
-            $this->order($columns, $direction);
+            $this->order(array(0 => $value, 1 => $this->getNameByIndex($value)), $direction);
             return;
         }
 
@@ -462,22 +440,16 @@ abstract class BaseEngine {
             }
         }
 
-        $iSortingCols = Input::get('iSortingCols');
-        $sortingCols[] = $value;
-        for($i = 1; $i < $iSortingCols; $i++) {
-            $isc = Input::get('iSortCol_'.$i);
-            $sortingCols[] = $isc;
-            $direction[$isc] = Input::get('sSortDir_'.$i);
-        }
-
-        $allColumns = array_keys($this->columns->all());
-        foreach ($sortingCols as $num) {
-            if(isset($allColumns[$num]) && in_array($allColumns[$num], $cleanNames)) {
-                $columns[] = array(0 => $num, 1 => '`'.$this->orderColumns[array_search($allColumns[$num],$cleanNames)].'`');
+        $i = 0;
+        foreach($this->columns as $name => $column)
+        {
+            if($i == $value && in_array($name, $cleanNames))
+            {
+                $this->order(array(0 => $value, 1 => $this->orderColumns[array_search($name,$cleanNames)]), $direction);
+                return;
             }
+            $i++;
         }
-        $this->order($columns, $direction);
-        return;
     }
 
     /**
@@ -488,6 +460,7 @@ abstract class BaseEngine {
      */
     protected function handleSingleColumnSearch($columnIndex, $searchValue)
     {
+        //dd($columnIndex, $searchValue, $this->searchColumns);
         if (!isset($this->searchColumns[$columnIndex])) return;
         if (empty($searchValue) && $searchValue !== '0') return;
 

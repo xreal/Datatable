@@ -59,11 +59,6 @@ class Table {
     protected $className;
 
     /**
-     * @var String The footer's display mode
-     */
-    protected $footerMode = 'hidden';
-
-    /**
      * @var String The view used to render the table
      */
     protected $table_view;
@@ -85,7 +80,7 @@ class Table {
 
     function __construct()
     {
-        $this->config = Config::get('datatable::table');
+        $this->config = Config::get('datatable.table');
 
         $this->setId( $this->config['id'] );
         $this->setClass( $this->config['class'] );
@@ -298,8 +293,7 @@ class Table {
         if( ! is_null($view))
             $this->table_view = $view;
 
-	        //If there is an ajax option (new mode since datatable 1.10), do not use compatibility mode (Bruno de l'Escaille)
-     	if(!isset($this->options['sAjaxSource']) && !isset($this->options['ajax']))
+        if(!isset($this->options['sAjaxSource']))
         {
             $this->setUrl(Request::url());
         }
@@ -319,7 +313,6 @@ class Table {
             'noScript'  => $this->noScript,
             'id'        => $this->idName,
             'class'     => $this->className,
-            'footerMode'=> $this->footerMode,
         );
 
         if (is_array($additional_template_variables)) {
@@ -401,18 +394,6 @@ class Table {
     }
 
     /**
-     * Set the footer display mode.
-     *
-     * @param $value the one of next values: 'hidden', 'columns', 'empty'
-     * @return $this
-     */
-    public function showFooter($value = 'columns')
-    {
-        $this->footerMode = $value;
-        return $this;
-    }
-
-    /**
      * Advise the Datatable to return the data mapped with the column name.
      *
      * @param bool $value explicitly set if the table should be aliased or not
@@ -433,24 +414,26 @@ class Table {
     {
         // set options for better handling
         // merge with existing options
-        if (!array_key_exists('aoColumns', $this->options)) {
+        if(!array_key_exists('aoColumns', $this->options))
+        {
             $this->options['aoColumns'] = array();
         }
-
         $matching = array();
         $i = 0;
-
-        foreach ($this->aliasColumns as $name) {
-            if (array_key_exists($i, $this->options['aoColumns'])) {
-                $this->options['aoColumns'][$i] = array_merge_recursive($this->options['aoColumns'][$i], array('mData' => $name));
-            } else {
+        foreach($this->aliasColumns as $name)
+        {
+            if(array_key_exists($i,$this->options['aoColumns']))
+            {
+                $this->options['aoColumns'][$i] = array_merge_recursive($this->options['aoColumns'][$i],array('mData' => $name));
+            }
+            else
+            {
                 $this->options['aoColumns'][$i] = array('mData' => $name);
             }
             $i++;
         }
-
         $this->createdMapping = true;
-
+        //dd($matching);
         return $matching;
     }
 }

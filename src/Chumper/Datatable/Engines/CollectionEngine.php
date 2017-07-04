@@ -32,6 +32,7 @@ class CollectionEngine extends BaseEngine {
      */
     const AND_CONDITION = 'AND';
 
+
     /**
      * @var array Different options
      */
@@ -134,7 +135,7 @@ class CollectionEngine extends BaseEngine {
         $this->doInternalSearch($columns, $searchColumns);
         $this->doInternalOrder();
 
-        return $this->workingCollection->slice($this->skip,$this->limit)->values();
+        return $this->workingCollection->slice($this->skip,$this->limit);
     }
 
     private function doInternalSearch(Collection $columns, array $searchColumns)
@@ -172,7 +173,7 @@ class CollectionEngine extends BaseEngine {
         }
 
         $self = $this;
-        $this->workingCollection = $this->workingCollection->filter(function($row) use ($toSearch, $caseSensitive, $self, $searchType)
+        $this->workingCollection = $this->workingCollection->filter(function($row) use ($value, $toSearch, $caseSensitive, $self, $searchType)
         {
 
             for($i=0, $stack=array(), $nb=count($row); $i<$nb; $i++)
@@ -242,21 +243,14 @@ class CollectionEngine extends BaseEngine {
         if(is_null($this->orderColumn))
             return;
 
-        // Bug added on pull request #309
-        $column = array_values($this->orderColumn)[0];
-        $direction = array_values($this->orderDirection)[0];
+        $column = $this->orderColumn[0];
         $stripOrder = $this->options['stripOrder'];
+        $self = $this;
+        $this->workingCollection->sortBy(function($row) use ($column,$stripOrder,$self) {
 
-        $sortFunction = 'sortBy';
-        if ($direction == BaseEngine::ORDER_DESC)
-            $sortFunction = 'sortByDesc';
-
-        $this->workingCollection->{$sortFunction}(function($row) use ($column,$stripOrder) {
-
-            if($this->getAliasMapping())
+            if($self->getAliasMapping())
             {
-                $column = $this->getNameByIndex($column[0]);
-                return $row[$column];
+                $column = $self->getNameByIndex($column);
             }
             if($stripOrder)
             {
@@ -264,11 +258,12 @@ class CollectionEngine extends BaseEngine {
             }
             else
             {
-                if (is_array($column))
-                    return $row[$column[0]];
                 return $row[$column];
             }
         });
+
+        if($this->orderDirection == BaseEngine::ORDER_DESC)
+            $this->workingCollection = $this->workingCollection->reverse();
     }
 
     private function compileArray($columns)

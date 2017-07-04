@@ -3,12 +3,15 @@
 use Chumper\Datatable\Engines\CollectionEngine;
 use Chumper\Datatable\Engines\QueryEngine;
 use Input;
+use Request;
 
 /**
  * Class Datatable
  * @package Chumper\Datatable
  */
 class Datatable {
+
+    private $columnNames = array();
 
     /**
      * @param $query

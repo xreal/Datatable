@@ -1,6 +1,7 @@
 <?php namespace Chumper\Datatable;
 
 use Illuminate\Support\ServiceProvider;
+use View;
 
 class DatatableServiceProvider extends ServiceProvider {
 
@@ -14,6 +15,27 @@ class DatatableServiceProvider extends ServiceProvider {
     public function boot()
     {
         //$this->package('chumper/datatable');
+        $viewPath = __DIR__.'/../../resources/views';
+        $this->loadViewsFrom($viewPath, 'datatable');
+
+        $this->publishes([
+            $viewPath => base_path('resources/views/vendor/datatable'),
+        ]);
+    }
+
+    /**
+     * Prepare the package resources.
+     *
+     * @return void
+     */
+    protected function prepareResources()
+    {
+
+        $configPath = __DIR__ . '/../../config/config.php';
+        $this->mergeConfigFrom($configPath, 'datatable');
+        $this->publishes([
+            $configPath => config_path('datatable.php'),
+        ]);
     }
 
     /**
@@ -23,7 +45,9 @@ class DatatableServiceProvider extends ServiceProvider {
 	 */
     public function register()
     {
-        $this->app->singleton('datatable', function($app)
+        $this->prepareResources();
+
+        $this->app['datatable'] = $this->app->share(function($app)
         {
             return new Datatable;
         });
@@ -38,4 +62,5 @@ class DatatableServiceProvider extends ServiceProvider {
     {
         return array('datatable');
     }
+
 }
