@@ -13,7 +13,7 @@ class DatatableServiceProvider extends ServiceProvider {
 
     public function boot()
     {
-        $this->package('chumper/datatable');
+        //$this->package('chumper/datatable');
     }
 
     /**
@@ -23,7 +23,7 @@ class DatatableServiceProvider extends ServiceProvider {
 	 */
     public function register()
     {
-        $this->app['datatable'] = $this->app->share(function($app)
+        $this->app->singleton('datatable', function($app)
         {
             return new Datatable;
         });
